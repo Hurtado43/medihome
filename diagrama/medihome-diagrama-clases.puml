@@ -1,0 +1,94 @@
+@startuml medihome-diagrama-clases
+title MediHome - Diagrama de clases
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #1F4E79
+}
+
+interface Notificable <<interface>> {
+  + recibirNotificacion(mensaje: String): void
+}
+
+abstract class Usuario {
+  - identificacion: String
+  - nombre: String
+  - correoElectronico: String
+  + recibirNotificacion(mensaje: String): void
+}
+
+class Paciente {
+  - telefono: String
+  - direccionPrincipal: String
+  + solicitarServicio(codigo, fechaHoraProgramada, direccionAtencion, motivo): ServicioDomiciliario
+}
+
+class ProfesionalSalud {
+  - registroProfesional: String
+  - especialidad: String
+}
+
+class EquipoAtencion {
+  - codigo: String
+  - nombre: String
+  - zonaCobertura: String
+  + agregarProfesional(p: ProfesionalSalud): void
+  + retirarProfesional(p: ProfesionalSalud): void
+}
+
+class ServicioDomiciliario {
+  - codigo: String
+  - fechaHoraProgramada: LocalDateTime
+  - direccionAtencion: String
+  - motivo: String
+  - estado: EstadoServicio
+  + programar(p: ProfesionalSalud): void
+  + iniciarAtencion(inicio: LocalDateTime): AtencionMedica
+  + finalizar(fin, observaciones, recomendaciones): void
+  + cancelar(): void
+}
+
+enum EstadoServicio <<enumeration>> {
+  SOLICITADO
+  PROGRAMADO
+  EN_ATENCION
+  FINALIZADO
+  CANCELADO
+}
+
+class AtencionMedica {
+  - fechaHoraInicio: LocalDateTime
+  - fechaHoraFin: LocalDateTime
+  - observacionesClinicas: String
+  - recomendaciones: String
+  + registrarMedicion(...): MedicionSignosVitales
+}
+
+class MedicionSignosVitales {
+  - fechaHora: LocalDateTime
+  - temperatura: double
+  - frecuenciaCardiaca: int
+  - presionSistolica: int
+  - presionDiastolica: int
+  - saturacionOxigeno: int
+}
+
+Notificable <|.. Usuario
+Usuario <|-- Paciente
+Usuario <|-- ProfesionalSalud
+
+Paciente "1" -- "0..*" ServicioDomiciliario : solicita >
+ProfesionalSalud "0..1" -- "0..*" ServicioDomiciliario : atiende >
+EquipoAtencion "0..1" o-- "1..*" ProfesionalSalud : integra >
+ServicioDomiciliario --> EstadoServicio : estado
+ServicioDomiciliario "1" *-- "0..1" AtencionMedica : resulta en >
+AtencionMedica "1" *-- "0..*" MedicionSignosVitales : registra >
+
+note bottom of AtencionMedica
+  La atención no existe sin su servicio
+  (composición). Las mediciones pertenecen
+  exclusivamente a su atención.
+end note
+@enduml
